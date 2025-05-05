@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">CropFit</string>
+    <string name="title_activity_login_actvity">LoginActvity</string>
+    <string name="title_activity_dashboard">DashboardActivity</string>
+</resources>

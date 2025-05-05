@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "997286512718",
+    "project_id": "cropfit-1898a",
+    "storage_bucket": "cropfit-1898a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:997286512718:android:2564d192859c70ac9c9b1f",
+        "android_client_info": {
+          "package_name": "com.bibek.cropfit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "997286512718-l7fo05jsrkni7vtm9osd1fdv5rhdl8i1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTTQlmQLWA8MEpQI8yPUz8Rh4k0a59VSI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "997286512718-l7fo05jsrkni7vtm9osd1fdv5rhdl8i1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
