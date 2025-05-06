@@ -79,6 +79,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.auth)
+    implementation(libs.firestore)
 
     // Google
     implementation(libs.google.signin)
@@ -90,4 +91,15 @@ dependencies {
 
     // Lottie Animation
     implementation(libs.lottie)
+
+    // Google Maps
+    implementation(libs.googleMaps)
+    implementation(libs.playServicesMaps)
+    implementation(libs.location)
+
+    // Kotlin X Serialization
+    implementation(libs.kotlinxSerialization)
+
+    // Permissions
+    implementation(libs.permissions)
 }

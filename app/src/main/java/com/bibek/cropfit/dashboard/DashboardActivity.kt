@@ -30,6 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.createGraph
 import com.bibek.cropfit.dashboard.ui.theme.CropFitTheme
+import com.bibek.cropfit.fieldForm.FieldFormScreen
 import com.bibek.cropfit.fields.FieldsScreen
 import com.bibek.cropfit.home.HomeScreen
 import com.bibek.cropfit.profile.ProfileScreen
@@ -67,10 +68,13 @@ fun DashboardScreen(name: String, modifier: Modifier = Modifier) {
                 HomeScreen()
             }
             composable(route = Screen.Fields.route) {
-                FieldsScreen()
+                FieldsScreen(navController)
             }
             composable(route = Screen.Profile.route) {
                 ProfileScreen()
+            }
+            composable(route = Screen.FieldForm.route) {
+                FieldFormScreen(navController)
             }
         }
         NavHost(

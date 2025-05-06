@@ -14,6 +14,13 @@ coil = "3.1.0"
 lottie = "6.6.6"
 datastorePreferences = "1.1.5"
 navigation = "2.8.9"
+googleMaps = "2.11.4"
+playServicesMaps = "19.2.0"
+playServicesAuth = "21.3.0"
+kotlinxSerilization = "1.8.1"
+permissions = "0.28.0"
+location = "21.3.0"
+
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,7 +40,10 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
-google-signin = { group = "com.google.android.gms", name = "play-services-auth", version = "21.3.0" }
+firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+google-signin = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
+location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "location" }
+permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "permissions" }
 
 coil = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coilNetworkOkHttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
@@ -44,6 +54,11 @@ lottie = { group = "com.airbnb.android", name = "lottie-compose", version.ref = 
 datastorePreferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
 
 navigation = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+
+googleMaps = { group = "com.google.maps.android", name = "maps-compose", version.ref = "googleMaps" }
+playServicesMaps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
+
+kotlinxSerialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerilization" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
