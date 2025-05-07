@@ -43,7 +43,7 @@ class DashboardActivity : ComponentActivity() {
             CropFitTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     DashboardScreen(
-                        name = "Android", modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding(innerPadding)
                     )
                 }
             }
@@ -56,7 +56,7 @@ data class NavigationItem(
 )
 
 @Composable
-fun DashboardScreen(name: String, modifier: Modifier = Modifier) {
+fun DashboardScreen(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
 
     Scaffold(
@@ -133,6 +133,6 @@ fun BottomNavigationBar(navController: NavHostController) {
 @Composable
 fun GreetingPreview() {
     CropFitTheme {
-        DashboardScreen("Android")
+        DashboardScreen()
     }
 }

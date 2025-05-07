@@ -22,6 +22,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
@@ -42,6 +44,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.Polygon
@@ -57,7 +61,7 @@ fun FieldFormScreen(navController: NavController) {
         rememberPermissionState(permission = android.Manifest.permission.ACCESS_FINE_LOCATION)
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(27.7172, 85.3240), 14f)
+        position = CameraPosition.fromLatLngZoom(LatLng(27.7172, 85.3240), 20f)
     }
     val markerStates = remember { mutableStateListOf<MarkerState>() }
     var selectedMarkerState by remember { mutableStateOf<MarkerState?>(null) }
@@ -72,8 +76,12 @@ fun FieldFormScreen(navController: NavController) {
     var isFieldAdded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        if (permissionState.status == PermissionStatus.Granted) {
+        if (hasLocationPermission(permissionState)) {
             getUserLocation(fusedLocationClient, cameraPositionState)
+        } else {
+            if (permissionState.status != PermissionStatus.Granted) {
+                permissionState.launchPermissionRequest()
+            }
         }
     }
 
@@ -88,19 +96,21 @@ fun FieldFormScreen(navController: NavController) {
 
     }
     Column(modifier = Modifier.fillMaxSize()) {
-        if (permissionState.status != PermissionStatus.Granted) {
-            PermissionRequired(permissionState) {
-                getUserLocation(fusedLocationClient, cameraPositionState)
-            }
-        }
-
         GoogleMap(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
+            uiSettings = MapUiSettings(hasLocationPermission(permissionState)),
+            properties = MapProperties().copy(
+                isMyLocationEnabled = hasLocationPermission(permissionState),
+            ),
             cameraPositionState = cameraPositionState,
             onMapClick = { latLng ->
                 markerStates.add(MarkerState(position = latLng))
+            },
+            onMyLocationButtonClick = {
+                getUserLocation(fusedLocationClient, cameraPositionState)
+                false
             }) {
             markerStates.forEach { state ->
                 Marker(
@@ -134,33 +144,38 @@ fun FieldFormScreen(navController: NavController) {
                 },
                 isError = error.value,
                 label = { Text("Field Name") },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(16.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = {
-                if (fieldName.value.isBlank()) {
-                    error.value = true
-                } else if (markerStates.size >= 3) {
-                    val center = computeCenter(markerStates.map { it.position })
-                    isUploading = true
+            Button(
+                modifier = Modifier.align(alignment = Alignment.CenterVertically),
+                enabled = markerStates.size >= 3,
+                onClick = {
+                    if (fieldName.value.isBlank()) {
+                        error.value = true
+                    } else if (markerStates.size >= 3) {
+                        val center = computeCenter(markerStates.map { it.position })
+                        isUploading = true
 
-                    uploadFieldToFirestore(
-                        name = fieldName.value,
-                        center = center,
-                        points = markerStates.map { it.position },
-                        onSuccess = {
-                            isUploading = false
-                            showSuccessDialog = true
-                            fieldName.value = ""
-                            isFieldAdded = true
-                            markerStates.clear()
-                        },
-                        onFailure = {
-                            isUploading = false
-                            showErrorDialog = true
-                        })
-                }
-            }) {
+                        uploadFieldToFirestore(
+                            name = fieldName.value,
+                            center = center,
+                            points = markerStates.map { it.position },
+                            onSuccess = {
+                                isUploading = false
+                                showSuccessDialog = true
+                                fieldName.value = ""
+                                isFieldAdded = true
+                                markerStates.clear()
+                            },
+                            onFailure = {
+                                isUploading = false
+                                showErrorDialog = true
+                            })
+                    }
+                }) {
                 Text("Done")
             }
         }
@@ -169,7 +184,7 @@ fun FieldFormScreen(navController: NavController) {
             Text(
                 "Field name cannot be empty",
                 color = Color.Red,
-                modifier = Modifier.padding(start = 16.dp)
+                modifier = Modifier.padding(bottom = 16.dp)
             )
         }
     }
@@ -239,8 +254,8 @@ fun PermissionRequired(
 ) {
     LaunchedEffect(permissionState) {
         if (permissionState.status.shouldShowRationale) {
-            // Optionally show a message explaining why permission is required
-        } else if (permissionState.status == PermissionStatus.Granted) {
+
+        } else if (hasLocationPermission(permissionState)) {
             onGranted()
         }
     }
@@ -252,6 +267,10 @@ fun PermissionRequired(
         }
     }
 }
+
+@OptIn(ExperimentalPermissionsApi::class)
+private fun hasLocationPermission(permissionState: PermissionState): Boolean =
+    permissionState.status == PermissionStatus.Granted
 
 // Function to get user's location and set camera
 fun getUserLocation(
