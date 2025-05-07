@@ -1,5 +1,6 @@
 package com.bibek.cropfit.fields
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -56,6 +57,8 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,7 +139,10 @@ fun FieldsScreen(navController: NavController) {
                     LazyColumn(modifier = Modifier.padding(innerPadding)) {
                         items(fields.size) { index ->
                             val field = fields[index]
-                            FieldItem(field = field, onDeleteClick = {
+                            FieldItem(field = field, onClick = {
+                                val json = Uri.encode(Json.encodeToString(field))
+                                navController.navigate(Screen.FieldFormWithData(json).route)
+                            }, onDeleteClick = {
                                 fieldToDelete.value = field
                             }, onFavouriteClick = {
                                 isUpdating = true
@@ -232,14 +238,14 @@ private fun fetchFields(
                     val timestamp = document.getLong("timestamp") ?: 0L
 
                     // Convert the center map to LatLng
-                    val center = LatLng(
+                    val center = LatLngSerializable(
                         centerMap["lat"].toString().toDouble(),
                         centerMap["lng"].toString().toDouble()
                     )
 
                     // Convert the points to LatLng
                     val points = pointsList.map {
-                        LatLng(
+                        LatLngSerializable(
                             it["lat"]?.toString()?.toDouble() ?: 0.0, it["lng"] ?: 0.0
                         )
                     }
@@ -259,10 +265,13 @@ private fun fetchFields(
 
 @Composable
 fun FieldItem(
-    field: Field, onFavouriteClick: (() -> Unit)? = null, onDeleteClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    field: Field,
+    onFavouriteClick: (() -> Unit)? = null,
+    onDeleteClick: (() -> Unit)? = null
 ) {
     Card(
-        modifier = Modifier
+        onClick = onClick ?: {}, modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
     ) {
@@ -318,14 +327,27 @@ fun FieldItem(
     }
 }
 
+@Serializable
 data class Field(
     val id: String = "",
     val name: String = "",
-    val center: LatLng = LatLng(0.0, 0.0),
-    val points: List<LatLng> = listOf(),
+    val center: LatLngSerializable = LatLngSerializable(0.0, 0.0),
+    val points: List<LatLngSerializable> = listOf(),
     val timestamp: Long = 0L,
     val isFavourite: Boolean = false
 )
+
+@Serializable
+data class LatLngSerializable(
+    val latitude: Double, val longitude: Double
+) {
+    fun toLatLng(): LatLng = LatLng(latitude, longitude)
+
+    companion object {
+        fun fromLatLng(latLng: LatLng): LatLngSerializable =
+            LatLngSerializable(latLng.latitude, latLng.longitude)
+    }
+}
 
 sealed class Resource<out T> {
     object Loading : Resource<Nothing>()
@@ -345,7 +367,7 @@ fun FieldItemPreview() {
     FieldItem(
         field = Field().copy(
             name = "Sample Field",
-            center = LatLng(0.11123, 535345.34534),
+            center = LatLngSerializable(0.11123, 535345.34534),
         )
     )
 }

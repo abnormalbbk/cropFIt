@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,10 +28,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.bibek.cropfit.fields.Field
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.PermissionStatus
@@ -53,7 +57,11 @@ import com.google.maps.android.compose.rememberCameraPositionState
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun FieldFormScreen(navController: NavController) {
+fun FieldFormScreen(
+    navController: NavController,
+    field: Field? = null,
+) {
+    val isEdit = field != null
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
@@ -61,12 +69,27 @@ fun FieldFormScreen(navController: NavController) {
         rememberPermissionState(permission = android.Manifest.permission.ACCESS_FINE_LOCATION)
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(27.7172, 85.3240), 20f)
+        position = CameraPosition.fromLatLngZoom(
+            if (isEdit) LatLng(
+                field.center.latitude, field.center.longitude
+            ) else LatLng(27.7172, 85.3240), 20f
+        )
     }
-    val markerStates = remember { mutableStateListOf<MarkerState>() }
-    var selectedMarkerState by remember { mutableStateOf<MarkerState?>(null) }
+    val markerStates = remember {
+        if (isEdit) {
+            val existingMarkers =
+                field.points.map { MarkerState(position = LatLng(it.latitude, it.longitude)) }
+                    .toMutableList<MarkerState>()
+            val existingMarkersStater = mutableStateListOf<MarkerState>()
+            existingMarkersStater.addAll(existingMarkers)
+            existingMarkersStater
+        } else mutableStateListOf<MarkerState>()
+    }
 
-    val fieldName = remember { mutableStateOf("") }
+    var selectedMarkerState by remember {
+        mutableStateOf<MarkerState?>(null)
+    }
+    val fieldName = remember { mutableStateOf(if (isEdit) field.name else "") }
     val error = remember { mutableStateOf(false) }
 
     // Upload states
@@ -74,10 +97,11 @@ fun FieldFormScreen(navController: NavController) {
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
     var isFieldAdded by remember { mutableStateOf(false) }
+    var isFavourite by remember { mutableStateOf(if (isEdit) field.isFavourite else true) }
 
     LaunchedEffect(Unit) {
         if (hasLocationPermission(permissionState)) {
-            getUserLocation(fusedLocationClient, cameraPositionState)
+            if (!isEdit) getUserLocation(fusedLocationClient, cameraPositionState)
         } else {
             if (permissionState.status != PermissionStatus.Granted) {
                 permissionState.launchPermissionRequest()
@@ -112,6 +136,7 @@ fun FieldFormScreen(navController: NavController) {
                 getUserLocation(fusedLocationClient, cameraPositionState)
                 false
             }) {
+
             markerStates.forEach { state ->
                 Marker(
                     state = state, title = "Marker", draggable = true, onClick = {
@@ -131,10 +156,7 @@ fun FieldFormScreen(navController: NavController) {
         }
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween
         ) {
             OutlinedTextField(
                 value = fieldName.value,
@@ -160,9 +182,12 @@ fun FieldFormScreen(navController: NavController) {
                         isUploading = true
 
                         uploadFieldToFirestore(
+                            isEdit = isEdit,
+                            id = if (isEdit) field.id else "",
                             name = fieldName.value,
                             center = center,
                             points = markerStates.map { it.position },
+                            favourite = isFavourite,
                             onSuccess = {
                                 isUploading = false
                                 showSuccessDialog = true
@@ -184,8 +209,28 @@ fun FieldFormScreen(navController: NavController) {
             Text(
                 "Field name cannot be empty",
                 color = Color.Red,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
             )
+        }
+
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .toggleable(
+                    value = isFavourite, onValueChange = {
+                        isFavourite = it
+                    }, role = Role.Checkbox
+                )
+                .padding(start = 0.dp, top = 8.dp, bottom = 8.dp, end = 16.dp),
+        ) {
+            Checkbox(
+                checked = isFavourite,
+                onCheckedChange = {
+                    isFavourite = it
+                },
+            )
+            Text("Mark as favourite")
         }
     }
 
@@ -291,20 +336,33 @@ fun computeCenter(points: List<LatLng>): LatLng {
 }
 
 fun uploadFieldToFirestore(
-    name: String, center: LatLng, points: List<LatLng>, onSuccess: () -> Unit, onFailure: () -> Unit
+    isEdit: Boolean,
+    id: String = "",
+    name: String,
+    center: LatLng,
+    points: List<LatLng>,
+    favourite: Boolean,
+    onSuccess: () -> Unit,
+    onFailure: () -> Unit
 ) {
     val db = Firebase.firestore
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return onFailure()
 
     val fieldData = hashMapOf(
+        "id" to id,
         "name" to name,
         "center" to hashMapOf("lat" to center.latitude, "lng" to center.longitude),
         "points" to points.map { mapOf("lat" to it.latitude, "lng" to it.longitude) },
-        "timestamp" to System.currentTimeMillis()
+        "timestamp" to System.currentTimeMillis(),
+        "favourite" to favourite
     )
-
-    db.collection("users").document(userId).collection("fields").add(fieldData)
-        .addOnSuccessListener { onSuccess() }.addOnFailureListener { onFailure() }
+    if (isEdit) {
+        db.collection("users").document(userId).collection("fields").document(id).update(fieldData)
+            .addOnSuccessListener { onSuccess() }.addOnFailureListener { onFailure() }
+    } else {
+        db.collection("users").document(userId).collection("fields").add(fieldData)
+            .addOnSuccessListener { onSuccess() }.addOnFailureListener { onFailure() }
+    }
 }
 
 

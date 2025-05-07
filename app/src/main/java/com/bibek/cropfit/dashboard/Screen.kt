@@ -2,16 +2,14 @@ package com.bibek.cropfit.dashboard
 
 import kotlinx.serialization.Serializable
 
+@Serializable
 sealed class Screen(val route: String) {
-    @Serializable
     object Home : Screen("home_screen")
-
-    @Serializable
     object Fields : Screen("field_screen")
-
-    @Serializable
     object Profile : Screen("profile_screen")
+    object FieldForm : Screen("field_form")
 
     @Serializable
-    object FieldForm : Screen("field_form")
+    data class FieldFormWithData(val fieldJson: String) :
+        Screen("field_form/${android.net.Uri.encode(fieldJson)}")
 }

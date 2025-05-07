@@ -1,5 +1,6 @@
 package com.bibek.cropfit.dashboard
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -25,15 +26,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.createGraph
+import androidx.navigation.navArgument
 import com.bibek.cropfit.dashboard.ui.theme.CropFitTheme
 import com.bibek.cropfit.fieldForm.FieldFormScreen
+import com.bibek.cropfit.fields.Field
 import com.bibek.cropfit.fields.FieldsScreen
 import com.bibek.cropfit.home.HomeScreen
 import com.bibek.cropfit.profile.ProfileScreen
+import kotlinx.serialization.json.Json
 
 class DashboardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,8 +78,22 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
             composable(route = Screen.Profile.route) {
                 ProfileScreen()
             }
+            composable(
+                route = "field_form/{fieldJson}", arguments = listOf(
+                navArgument("fieldJson") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })) { backStackEntry ->
+                val json = backStackEntry.arguments?.getString("fieldJson")
+                val field = json?.let { Json.decodeFromString<Field>(Uri.decode(it)) }
+
+                FieldFormScreen(navController = navController, field = field)
+            }
+
+            // For new form (no data)
             composable(route = Screen.FieldForm.route) {
-                FieldFormScreen(navController)
+                FieldFormScreen(navController = navController, field = null)
             }
         }
         NavHost(
@@ -108,20 +127,20 @@ fun BottomNavigationBar(navController: NavHostController) {
         navigationItems.forEachIndexed { index, item ->
             NavigationBarItem(
                 selected = selectedNavigationIndex.intValue == index, onClick = {
-                selectedNavigationIndex.intValue = index
-                navController.navigate(item.route)
-            }, icon = {
-                Icon(imageVector = item.icon, contentDescription = item.title)
-            }, label = {
-                Text(
-                    item.title,
-                    color = if (index == selectedNavigationIndex.intValue) Color.Black
-                    else Color.Gray
+                    selectedNavigationIndex.intValue = index
+                    navController.navigate(item.route)
+                }, icon = {
+                    Icon(imageVector = item.icon, contentDescription = item.title)
+                }, label = {
+                    Text(
+                        item.title,
+                        color = if (index == selectedNavigationIndex.intValue) Color.Black
+                        else Color.Gray
+                    )
+                }, colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.surface,
+                    indicatorColor = MaterialTheme.colorScheme.primary
                 )
-            }, colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.surface,
-                indicatorColor = MaterialTheme.colorScheme.primary
-            )
 
             )
         }
