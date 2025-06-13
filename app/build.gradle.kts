@@ -53,6 +53,12 @@ android {
     buildFeatures {
         compose = true
     }
+
+    packaging {
+        resources {
+            excludes += "META-INF/INDEX.LIST"
+        }
+    }
 }
 
 dependencies {
@@ -81,6 +87,13 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.auth)
     implementation(libs.firestore)
+    implementation(libs.firebaseMLInterpreter)
+    implementation(libs.firebaseMLModelDwonloader)
+
+    // TensorFlow
+    implementation(libs.tensoflowLite)
+//    implementation(libs.tensorflowLiteTaskVision)
+//    implementation(libs.tensorflowLiteGPU)
 
     // Google
     implementation(libs.google.signin)
@@ -103,4 +116,15 @@ dependencies {
 
     // Permissions
     implementation(libs.permissions)
+
+    // Ktor
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+//    implementation(libs.ktor.logger)
+
+    // Coroutine
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
 }

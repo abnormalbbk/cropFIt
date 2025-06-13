@@ -3,6 +3,8 @@ package com.bibek.cropfit.fields
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,7 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -40,8 +45,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -50,8 +58,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.bibek.cropfit.R
 import com.bibek.cropfit.dashboard.Screen
+import com.bibek.cropfit.login.ui.theme.Green
 import com.bibek.cropfit.login.ui.theme.Red
+import com.bibek.cropfit.ui.theme.Orange
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -59,6 +70,8 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+
+val iconSize = 24.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -271,55 +284,85 @@ fun FieldItem(
     onDeleteClick: (() -> Unit)? = null
 ) {
     Card(
-        onClick = onClick ?: {}, modifier = Modifier
+        onClick = onClick ?: {},
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(vertical = 8.dp, horizontal = 16.dp),
+        shape = RoundedCornerShape(8.dp),
     ) {
-        Row {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .weight(1f)
-            ) {
-                Text(text = field.name, style = MaterialTheme.typography.titleLarge)
-                Spacer(modifier = Modifier.height(8.dp))
+        Column() {
+            Box {
+                Image(
+                    painter = painterResource(R.drawable.ic_mountain),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Text(
-                    text = buildAnnotatedString {
-                        withStyle(style = SpanStyle(color = Color.Black)) {
-                            append("Latitude: ")
-                        }
-                        withStyle(style = SpanStyle(color = Color.Gray)) {
-                            append(field.center.latitude.toString())
-                        }
-                        withStyle(style = SpanStyle(color = Color.Black)) {
-                            append("\nLongitude: ")
-                        }
-                        withStyle(style = SpanStyle(color = Color.Gray)) {
-                            append(field.center.longitude.toString())
-                        }
-                    })
+                    text = field.name,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        color = Color.Black
+                    ),
+                    modifier = Modifier
+                        .background(color = White)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    maxLines = 1
+                )
             }
-            Column(modifier = Modifier.align(alignment = Alignment.CenterVertically)) {
-                onDeleteClick?.let {
-                    IconButton(
-                        onClick = it
-                    ) {
-                        Image(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
-                            colorFilter = ColorFilter.tint(Red)
+            Row(
+                modifier = Modifier
+                    .background(
+                        Orange.copy(
+                            alpha = 0.1F
                         )
+                    )
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+
+                FieldDetailItem(
+                    iconId = android.R.drawable.ic_dialog_map,
+                    title = "Latitude",
+                    subTitle = String.format("%.2f", field.center.latitude)
+                )
+                Spacer(modifier = Modifier.width(20.dp))
+                FieldDetailItem(
+                    iconId = android.R.drawable.ic_dialog_map,
+                    title = "Longitude",
+                    subTitle = String.format("%.2f", field.center.longitude)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                onDeleteClick?.let {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        IconButton(
+                            onClick = it, modifier = Modifier.padding(0.dp)
+                        ) {
+                            Image(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete",
+                                colorFilter = ColorFilter.tint(Red),
+                                modifier = Modifier.size(iconSize)
+                            )
+                        }
+                        Text("Delete\n", textAlign = TextAlign.Center)
                     }
                 }
                 onFavouriteClick?.let {
-                    IconButton(
-                        onClick = it
-                    ) {
-                        Image(
-                            imageVector = if (field.isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = "Delete",
-                            colorFilter = ColorFilter.tint(Red)
-                        )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        IconButton(
+                            onClick = it
+                        ) {
+                            Image(
+                                imageVector = if (field.isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = null,
+                                colorFilter = ColorFilter.tint(Red),
+                                modifier = Modifier.size(iconSize)
+                            )
+                        }
+                        Text("Favourite\n", textAlign = TextAlign.Center)
                     }
                 }
             }
@@ -366,10 +409,33 @@ fun FieldsScreenPreview() {
 fun FieldItemPreview() {
     FieldItem(
         field = Field().copy(
-            name = "Sample Field",
-            center = LatLngSerializable(0.11123, 535345.34534),
+        name = "Sample Field",
+        center = LatLngSerializable(0.11123, 535345.34534),
+    ), onDeleteClick = {}, onFavouriteClick = {})
+}
+
+@Composable
+fun FieldDetailItem(
+    iconId: Int, title: String, subTitle: String
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Image(
+            painter = painterResource(iconId),
+            contentDescription = null,
+            modifier = Modifier.size(iconSize),
+            colorFilter = ColorFilter.tint(color = Green)
         )
-    )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            textAlign = TextAlign.Center, text = buildAnnotatedString {
+                withStyle(style = SpanStyle(color = Color.Black)) {
+                    append("$title\n")
+                }
+                withStyle(style = SpanStyle(color = Green)) {
+                    append(subTitle)
+                }
+            })
+    }
 }
 
 fun deleteField(fieldId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {

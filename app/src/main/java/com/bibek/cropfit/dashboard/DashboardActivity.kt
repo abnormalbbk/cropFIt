@@ -29,6 +29,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.createGraph
 import androidx.navigation.navArgument
@@ -70,7 +71,7 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
 
         val graph = navController.createGraph(startDestination = Screen.Home.route) {
             composable(route = Screen.Home.route) {
-                HomeScreen()
+                HomeScreen(navController)
             }
             composable(route = Screen.Fields.route) {
                 FieldsScreen(navController)
@@ -80,11 +81,12 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
             }
             composable(
                 route = "field_form/{fieldJson}", arguments = listOf(
-                navArgument("fieldJson") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                })) { backStackEntry ->
+                    navArgument("fieldJson") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    })
+            ) { backStackEntry ->
                 val json = backStackEntry.arguments?.getString("fieldJson")
                 val field = json?.let { Json.decodeFromString<Field>(Uri.decode(it)) }
 
@@ -109,6 +111,9 @@ fun BottomNavigationBar(navController: NavHostController) {
         mutableIntStateOf(0)
     }
 
+    val navBackStackEntry = navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry.value?.destination?.route
+
     val navigationItems = listOf(
         NavigationItem(
             title = "Home", icon = Icons.Default.Home, route = Screen.Home.route
@@ -122,25 +127,26 @@ fun BottomNavigationBar(navController: NavHostController) {
     )
 
     NavigationBar(
-        containerColor = Color.White
-    ) {
+        containerColor = Color.White,
+
+        ) {
         navigationItems.forEachIndexed { index, item ->
             NavigationBarItem(
-                selected = selectedNavigationIndex.intValue == index, onClick = {
-                    selectedNavigationIndex.intValue = index
-                    navController.navigate(item.route)
-                }, icon = {
-                    Icon(imageVector = item.icon, contentDescription = item.title)
-                }, label = {
-                    Text(
-                        item.title,
-                        color = if (index == selectedNavigationIndex.intValue) Color.Black
-                        else Color.Gray
-                    )
-                }, colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.surface,
-                    indicatorColor = MaterialTheme.colorScheme.primary
+                selected = currentRoute == item.route, onClick = {
+                selectedNavigationIndex.intValue = index
+                navController.navigate(item.route)
+            }, icon = {
+                Icon(imageVector = item.icon, contentDescription = item.title)
+            }, label = {
+                Text(
+                    item.title,
+                    color = if (index == selectedNavigationIndex.intValue) Color.Black
+                    else Color.Gray
                 )
+            }, colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.surface,
+                indicatorColor = MaterialTheme.colorScheme.primary
+            )
 
             )
         }
